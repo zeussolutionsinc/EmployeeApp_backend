@@ -1,10 +1,4 @@
 global using EmployeePortal.Model;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -43,25 +37,25 @@ builder.Services.AddCors(options =>
                         .AllowAnyMethod());
 });
 
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
-{
-    options.Authority = "https://YOUR_AUTH0_DOMAIN/";
-    options.Audience = "YOUR_API_IDENTIFIER";
-    options.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuerSigningKey = true,
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true
-    };
-});
+//builder.Services.AddAuthentication(options =>
+//{
+//    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+//    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+//})
+//.AddJwtBearer(options =>
+//{
+//    options.Authority = "https://YOUR_AUTH0_DOMAIN/";
+//    options.Audience = "YOUR_API_IDENTIFIER";
+//    options.TokenValidationParameters = new TokenValidationParameters
+//    {
+//        ValidateIssuerSigningKey = true,
+//        ValidateIssuer = true,
+//        ValidateAudience = true,
+//        ValidateLifetime = true
+//    };
+//});
 
-builder.Services.AddControllers();
+//builder.Services.AddControllers();
 
 var app = builder.Build();
 
@@ -70,8 +64,8 @@ app.UseSwagger();
 app.UseSwaggerUI();
 app.UseHttpsRedirection();
 app.UseCors("AllowSpecificOrigin");
-app.UseAuthentication();  // Authentication middleware should come before Authorization
-app.UseAuthorization();   // Only need to call this once after UseAuthentication
+//app.UseAuthentication();  // Authentication middleware should come before Authorization
+//app.UseAuthorization();   // Only need to call this once after UseAuthentication
 app.MapControllers();
 
 

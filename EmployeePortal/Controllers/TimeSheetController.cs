@@ -5,7 +5,7 @@ using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 
 namespace EmployeePortal.Controllers
 {
-    [Authorize] // This attribute applies to all actions within this controller
+    // [Authorize] // This attribute applies to all actions within this controller
     [Route("api/[controller]")]
     [ApiController]
     public class TimeSheetController : ControllerBase
@@ -20,7 +20,7 @@ namespace EmployeePortal.Controllers
             _logger = logger; // Initialize the logger correctly
         }
 
-        [Authorize]
+        // [Authorize]
         [HttpGet]
         public IActionResult Get()
         {
@@ -128,7 +128,7 @@ namespace EmployeePortal.Controllers
             return Ok(employeeInfo);
         }
 
-        [Authorize]
+        //[Authorize]
         [HttpPost]
         public async Task<IActionResult> CreateTimeSheet([FromBody] TimeSheetEntryDTO timeSheetEntryDto)
         {
