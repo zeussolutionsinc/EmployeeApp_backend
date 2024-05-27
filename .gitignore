@@ -1,0 +1,18 @@
+################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+.vs
+artifacts
+lib
+packages
+bin
+obj
+Logs
+node_modules
+.sonarqube
+compile_commands.json
+.sonarlint
+*.ruleset
+.local-chromium
+Migrations
+.vscode
