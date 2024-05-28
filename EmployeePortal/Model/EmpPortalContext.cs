@@ -31,6 +31,8 @@ public partial class EmpPortalContext : DbContext
 
     public virtual DbSet<EmployeeLoginH> EmployeeLoginHs { get; set; }
 
+    public virtual DbSet<EmployeeXauthId> EmployeeXauthIds { get; set; }
+
     public virtual DbSet<H1bentriesH> H1bentriesHes { get; set; }
 
     public virtual DbSet<H1bentry> H1bentries { get; set; }
@@ -46,6 +48,8 @@ public partial class EmpPortalContext : DbContext
     public virtual DbSet<TimeSheetH> TimeSheetHs { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
+
+    public virtual DbSet<VacationAppItem> VacationAppItems { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) { }
 

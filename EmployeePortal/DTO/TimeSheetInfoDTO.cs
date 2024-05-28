@@ -21,6 +21,7 @@ namespace EmployeePortal.DTO
         public string ClientName { get; set; }
         // public DateOnly SubmissionDate { get; set; }
         public List<ProjectDateHoursEntry> ProjectDateHours { get; set; } = new List<ProjectDateHoursEntry>();
+        public string RecordNumber { get; set; }
 
         // Additional properties or methods can be added here as needed.
     }

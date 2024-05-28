@@ -20,7 +20,7 @@ public partial class TimeSheet
 
     public DateOnly? SubmissionDate { get; set; }
 
-    [StringLength(5)]
+    [StringLength(10)]
     [Unicode(false)]
     public string? ApprovalStatus { get; set; }
 
@@ -42,6 +42,10 @@ public partial class TimeSheet
 
     [Key]
     public int RecordId { get; set; }
+
+    [StringLength(5)]
+    [Unicode(false)]
+    public string? RecordNumber { get; set; }
 
     [ForeignKey("ApprovedBy")]
     [InverseProperty("TimeSheets")]

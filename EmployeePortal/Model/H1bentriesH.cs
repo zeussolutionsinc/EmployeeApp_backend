@@ -113,4 +113,7 @@ public partial class H1bentriesH
     [StringLength(50)]
     [Unicode(false)]
     public string? DegreeMajor { get; set; }
+
+    [Column("status")]
+    public bool? Status { get; set; }
 }

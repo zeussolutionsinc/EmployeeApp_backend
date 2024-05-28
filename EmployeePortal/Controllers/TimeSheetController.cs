@@ -1,7 +1,6 @@
 ﻿using EmployeePortal.DTO;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using System.Text;
 
 namespace EmployeePortal.Controllers
 {
@@ -21,13 +20,29 @@ namespace EmployeePortal.Controllers
         }
 
         // [Authorize]
-        [HttpGet]
-        public IActionResult Get()
+        [HttpGet("authid/{authid}")]
+        public IActionResult GetPrevRecord(string authid)
         {
-            // Attempt to fetch the first employeeId found, this could be adjusted based on specific requirements
-            var EmployeeId = _context.TimeSheets.Select(e => e.EmployeeId).FirstOrDefault();
 
-            if (EmployeeId == null)
+            if (authid == null)
+            {
+                return Unauthorized();
+            }
+
+            var authId = _context.EmployeeXauthIds.FirstOrDefault(ea => ea.AuthId == authid);
+
+            if (authId == null)
+            {
+                return NotFound();
+            }
+
+            var Employee = _context.EmployeeXauthIds
+                                   .Where(ea => ea.AuthId == authid)
+                                   .Select(ea => ea.EmployeeId)
+                                   .FirstOrDefault();
+
+
+            if (Employee == null)
             {
                 return NotFound("No employee found.");
             }
@@ -38,7 +53,7 @@ namespace EmployeePortal.Controllers
 
             // Query to get all dates of the current month and corresponding hours worked
             var projectDateHours = _context.TimeSheets
-                .Where(ts => ts.EmployeeId == EmployeeId &&
+                .Where(ts => ts.EmployeeId == Employee &&
                              ts.WorkingDate.HasValue &&
                              ts.WorkingDate.Value >= firstDayOfMonth &&
                              ts.WorkingDate.Value <= lastDayOfMonth)
@@ -65,7 +80,7 @@ namespace EmployeePortal.Controllers
 
             // Getting all projectids without any timesheet entries
             var projectsfromprojectsXemployee = _context.ProjectXemployees
-                                                .Where(e => e.EmployeeId == EmployeeId)
+                                                .Where(e => e.EmployeeId == Employee)
                                                 .Select(e => e.ProjectId)
                                                 .ToList();
 
@@ -84,23 +99,23 @@ namespace EmployeePortal.Controllers
 
             // Fetch additional information about the employee, project, and client
             var EmployeeFirstName = _context.Employees
-                                .Where(e => e.EmployeeId == EmployeeId)
+                                .Where(e => e.EmployeeId == Employee)
                                 .Select(e => e.FirstName)
                                 .FirstOrDefault();
 
             var EmployeeLastName = _context.Employees
-                                    .Where(e => e.EmployeeId == EmployeeId &&
+                                    .Where(e => e.EmployeeId == Employee &&
                                     e.FirstName == EmployeeFirstName)
                                     .Select(e => e.LastName)
                                     .FirstOrDefault();
 
             var projectId = _context.TimeSheets
-                .Where(ts => ts.EmployeeId == EmployeeId)
+                .Where(ts => ts.EmployeeId == Employee)
                 .Select(ts => ts.ProjectId)
                 .FirstOrDefault();
 
             var Approver = _context.TimeSheets
-                .Where(ts => ts.EmployeeId == EmployeeId)
+                .Where(ts => ts.EmployeeId == Employee)
                 .Select(ts => ts.ApprovedBy)
                 .FirstOrDefault();
 
@@ -117,7 +132,7 @@ namespace EmployeePortal.Controllers
             // Prepare the DTO for response
             var employeeInfo = new TimeSheetInfoDTO
             {
-                EmployeeId = EmployeeId,
+                EmployeeId = Employee,
                 EmployeeName = EmployeeFirstName + " " + EmployeeLastName,
                 ProjectName = ProjectName,
                 ClientName = ClientName,
@@ -136,6 +151,8 @@ namespace EmployeePortal.Controllers
             {
                 return BadRequest("No data is received for the time sheet entry.");
             }
+
+            var recordNo = GenerateRecordNumber();
 
             using (var transaction = _context.Database.BeginTransaction())
             {
@@ -169,6 +186,7 @@ namespace EmployeePortal.Controllers
                             WhatOperation = "I",
                             SubmissionDate = timeSheetEntryDto.SubmissionDate,
                             ApprovedBy = timeSheetEntryDto.Approver,
+                            RecordNumber = recordNo,
                         };
                         timeSheetEntries.Add(timesheetEntry);
                     }
@@ -185,6 +203,22 @@ namespace EmployeePortal.Controllers
                     return StatusCode(500, "Internal Server Error");
                 }
             }
+        }
+
+        static string GenerateRecordNumber()
+        {
+            Random rand = new Random();
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"; // Characters to choose from
+            StringBuilder sb = new StringBuilder(5);
+            sb.Append('R');
+
+            // Generate a random character from the 'chars' string and append it to the StringBuilder 'length' times
+            for (int i = 1; i < 5; i++)
+            {
+                sb.Append(chars[rand.Next(chars.Length)]);
+            }
+            return sb.ToString();
+
         }
 
         private async Task<IActionResult> UpdateTimeSheet(TimeSheet existingEntry, ProjectDateHoursEntry newData, DateOnly submissionDate)
