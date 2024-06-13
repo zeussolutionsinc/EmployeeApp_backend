@@ -38,3 +38,7 @@ msbuild.wrn
 .vs/
 
 obj/
+
+*.dll
+*.pdb
+*.cache
