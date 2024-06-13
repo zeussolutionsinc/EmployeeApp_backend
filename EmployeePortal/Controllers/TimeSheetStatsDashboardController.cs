@@ -27,18 +27,18 @@ namespace EmployeePortal.Controllers
                 return Unauthorized();
             }
 
-            var authId = _context.EmployeeXauthIds.FirstOrDefault(ea => ea.AuthId == authid);
+            var authId = _context.EmployeeLogins.FirstOrDefault(ea => ea.AuthId == authid);
 
             if (authId == null)
             {
                 return NotFound();
             }
 
-            var Employee = _context.EmployeeXauthIds
+            var Employee = _context.EmployeeLogins
                                    .Where(ea => ea.AuthId == authid)
                                    .Select(ea => ea.EmployeeId)
                                    .FirstOrDefault();
-           
+
 
             if (Employee == null)
             {
@@ -52,16 +52,22 @@ namespace EmployeePortal.Controllers
                                    .Count();
 
             var pending = _context.TimeSheets
-                                  .Where(ts => ts.ApprovalStatus == "P" &&  ts.EmployeeId == Employee)
+                                  .Where(ts => ts.ApprovalStatus == "P" && ts.EmployeeId == Employee)
                                   .Select(ts => ts.RecordNumber)
                                   .Distinct()
                                   .Count();
 
             var rejected = _context.TimeSheets
-                                   .Where(ts => ts.ApprovalStatus == "R" &&  ts.EmployeeId == Employee)
+                                   .Where(ts => ts.ApprovalStatus == "R" && ts.EmployeeId == Employee)
                                    .Select(ts => ts.RecordNumber)
                                    .Distinct()
                                    .Count();
+
+            var submitted = _context.TimeSheets
+                                    .Where(ts => ts.ApprovalStatus == "S" && ts.EmployeeId == Employee)
+                                    .Select(ts => ts.RecordNumber)
+                                    .Distinct()
+                                    .Count();
 
             var total = _context.TimeSheets
                                 .Where(ts => ts.EmployeeId == Employee)
@@ -79,6 +85,7 @@ namespace EmployeePortal.Controllers
                 ApprovedRecords = approved,
                 PendingRecords = pending,
                 RejectedRecords = rejected,
+                SubmittedRecords = submitted,
                 TotalRecords = total,
                 CurrentProjects = currentProjects
 

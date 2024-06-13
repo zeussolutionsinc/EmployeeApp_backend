@@ -27,15 +27,15 @@ namespace EmployeePortal.Controllers
                 return Unauthorized();
             }
 
-            var authId = _context.EmployeeXauthIds.FirstOrDefault(ea => ea.AuthId == authid);
+            var authId = _context.EmployeeLogins.FirstOrDefault(ea => ea.AuthId == authid);
 
             if (authId == null)
             {
                 return NotFound();
             }
 
-            var employee = _context.EmployeeXauthIds
-                                   .Where(ea =>  ea.AuthId == authid)
+            var employee = _context.EmployeeLogins
+                                   .Where(ea => ea.AuthId == authid)
                                    .Select(ea => ea.EmployeeId)
                                    .FirstOrDefault();
 
@@ -45,9 +45,8 @@ namespace EmployeePortal.Controllers
             var recordNumbers = _context.TimeSheets
                                 .Where(ts => ts.EmployeeId == employee)
                                 .GroupBy(ts => ts.RecordNumber)
-                                .Select(g => new {RecordNumber = g.Key, SubmissionDate = g.First().SubmissionDate})
+                                .Select(g => new { RecordNumber = g.Key, SubmissionDate = g.First().SubmissionDate })
                                 .OrderByDescending(x => x.SubmissionDate)
-                                .Take(5)    
                                 .Select(x => x.RecordNumber)
                                 .ToList();
 
@@ -80,6 +79,7 @@ namespace EmployeePortal.Controllers
                                 })
                                 .FirstOrDefault();
 
+
                 result.Add(new PreviousRecordDTO
                 {
                     RecordNumber = record,
@@ -90,7 +90,7 @@ namespace EmployeePortal.Controllers
                     EndDate = dateRange.MaxDate
                 });
 
-            } 
+            }
 
             return Ok(result);
         }

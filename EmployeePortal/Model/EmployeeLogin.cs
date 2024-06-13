@@ -23,4 +23,8 @@ public partial class EmployeeLogin
     [StringLength(1)]
     [Unicode(false)]
     public string? WhatOperation { get; set; }
+
+    [StringLength(25)]
+    [Unicode(false)]
+    public string? AuthId { get; set; }
 }
