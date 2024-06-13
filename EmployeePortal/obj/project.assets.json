@@ -8388,23 +8388,23 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\MuskanZeus\\.nuget\\packages\\": {},
+    "C:\\Users\\aniru\\.nuget\\packages\\": {},
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\MuskanZeus\\Desktop\\EmployeePortalBackend\\EmployeePortal\\EmployeePortal.csproj",
+      "projectUniqueName": "C:\\Users\\aniru\\OneDrive\\Desktop\\Zeus\\Portal\\EmployeeApp_backend\\EmployeePortal\\EmployeePortal.csproj",
       "projectName": "EmployeePortal",
-      "projectPath": "C:\\Users\\MuskanZeus\\Desktop\\EmployeePortalBackend\\EmployeePortal\\EmployeePortal.csproj",
-      "packagesPath": "C:\\Users\\MuskanZeus\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\MuskanZeus\\Desktop\\EmployeePortalBackend\\EmployeePortal\\obj\\",
+      "projectPath": "C:\\Users\\aniru\\OneDrive\\Desktop\\Zeus\\Portal\\EmployeeApp_backend\\EmployeePortal\\EmployeePortal.csproj",
+      "packagesPath": "C:\\Users\\aniru\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\aniru\\OneDrive\\Desktop\\Zeus\\Portal\\EmployeeApp_backend\\EmployeePortal\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
-        "C:\\Users\\MuskanZeus\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\aniru\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
@@ -8501,7 +8501,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.300/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.204/PortableRuntimeIdentifierGraph.json"
       }
     }
   }
