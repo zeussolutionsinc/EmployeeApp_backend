@@ -109,7 +109,7 @@ public partial class EmpPortalContext : DbContext
 
             entity.Property(e => e.EmployeeId).HasDefaultValueSql("(newid())");
             entity.Property(e => e.CreatedTime).HasDefaultValueSql("(sysutcdatetime())");
-            entity.Property(e => e.Tsfreq).IsFixedLength();
+            entity.Property(e => e.TimeSheet).IsFixedLength();
             entity.Property(e => e.UpdatedTime).HasDefaultValueSql("(sysutcdatetime())");
             entity.Property(e => e.WhatOperation).IsFixedLength();
 
@@ -120,7 +120,7 @@ public partial class EmpPortalContext : DbContext
 
         modelBuilder.Entity<EmployeeH>(entity =>
         {
-            entity.Property(e => e.Tsfreq).IsFixedLength();
+            entity.Property(e => e.TimeSheet).IsFixedLength();
             entity.Property(e => e.WhatOperation).IsFixedLength();
         });
 

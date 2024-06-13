@@ -49,10 +49,9 @@ public partial class Employee
     [Column("updated_time")]
     public DateTime? UpdatedTime { get; set; }
 
-    [Column("TSFreq")]
     [StringLength(5)]
     [Unicode(false)]
-    public string? Tsfreq { get; set; }
+    public string? TimeSheet { get; set; }
 
     [InverseProperty("CreatedUserNavigation")]
     public virtual ICollection<Approver> ApproverCreatedUserNavigations { get; set; } = new List<Approver>();
