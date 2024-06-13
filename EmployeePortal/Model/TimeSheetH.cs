@@ -49,4 +49,8 @@ public partial class TimeSheetH
     public string? WhatOperation { get; set; }
 
     public short? WorkingHours { get; set; }
+
+    [StringLength(5)]
+    [Unicode(false)]
+    public string? RecordNumber { get; set; }
 }

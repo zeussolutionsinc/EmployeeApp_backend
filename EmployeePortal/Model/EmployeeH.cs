@@ -56,4 +56,9 @@ public partial class EmployeeH
     [StringLength(1)]
     [Unicode(false)]
     public string? WhatOperation { get; set; }
+
+    [Column("TSFreq")]
+    [StringLength(5)]
+    [Unicode(false)]
+    public string? Tsfreq { get; set; }
 }
