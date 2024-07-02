@@ -34,9 +34,10 @@ namespace VacationAppApi.Controllers
         public async Task<ActionResult<IEnumerable<VacationAppItem>>> GetVacationAppItems()
         {
             return await _context.VacationAppItems
-                .Where(entry => entry.IsComplete == false)
+                .Where(entry => entry.ApprovalStatus == "Pending")
                 .ToListAsync();
         }
+
 
 
         // GET: api/VacationAppItems/5
@@ -99,52 +100,9 @@ namespace VacationAppApi.Controllers
             return NoContent();
         }
 
-        //// POST: api/VacationAppItems
-        //// To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        //[HttpPost]
-        //public async Task<ActionResult<VacationAppItem>> PostVacationAppItem([FromForm] IFormFile file, [FromForm] string name, [FromForm] string authid, [FromForm] string email,
-        //    [FromForm] string Endhours, [FromForm] string Starthours, [FromForm] bool agree, [FromForm] string body, [FromForm] DateOnly vacationStartdate,
-        //    [FromForm] DateOnly vacationEnddate)
-        //{
-        //    // Console.WriteLine("this os from frontemd file:");
-        //    // Console.WriteLine(file);
-        //    if (file == null || file.Length == 0)
-        //        return BadRequest("File is empty");
 
-        //    // var containerClient = _blobServiceClient.GetBlobContainerClient(_containerName);
-        //    // await containerClient.CreateIfNotExistsAsync();
-
-        //    //var blobClient = containerClient.GetBlobClient(Guid.NewGuid().ToString() + Path.GetExtension(file.FileName));
-        //    // await using var stream = file.OpenReadStream();
-        //    // await blobClient.UploadAsync(stream, true);
-
-        //    var vacationAppItem = new VacationAppItem
-        //    {
-        //        AuthId = authid,
-        //        Name = name,
-        //        Email = email,
-        //        Body = body,
-        //        Starthours = Starthours,
-        //        Endhours = Endhours,
-        //        VacationStartdate = vacationStartdate,
-        //        VacationEnddate = vacationEnddate,
-        //        agree = agree,
-        //        ImageUrl = blobClient.Uri.ToString(),
-
-        //    };
-        //    Console.WriteLine("this is json to store data to db");
-        //    Console.WriteLine(vacationAppItem);
-        //    _context.VacationAppItems.Add(vacationAppItem);
-        //    await _context.SaveChangesAsync();
-
-        //    Console.WriteLine("this is o=done to save DB");
-
-        //    return CreatedAtAction(nameof(GetVacationAppItem), new { id = vacationAppItem.Id }, vacationAppItem);
-        //}
-
-        // DELETE: api/VacationAppItems/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteVacationAppItem(long id)
+        [HttpPut("{id}/updateStatus")]
+        public async Task<IActionResult> UpdateVacationStatus(long id, [FromQuery] string status)
         {
             var vacationAppItem = await _context.VacationAppItems.FindAsync(id);
             if (vacationAppItem == null)
@@ -152,11 +110,30 @@ namespace VacationAppApi.Controllers
                 return NotFound();
             }
 
-            _context.VacationAppItems.Remove(vacationAppItem);
-            await _context.SaveChangesAsync();
+            vacationAppItem.ApprovalStatus = status;
+            _context.Entry(vacationAppItem).State = EntityState.Modified;
 
-            return NoContent();
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!VacationAppItemExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return Ok(new { message = "Status updated successfully!" });
         }
+
+
+
 
         private bool VacationAppItemExists(long id)
         {

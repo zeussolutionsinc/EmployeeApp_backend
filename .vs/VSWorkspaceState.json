@@ -1,9 +1,7 @@
 {
   "ExpandedNodes": [
-    "",
-    "\\Controllers",
-    "\\Models"
+    ""
   ],
-  "SelectedNode": "\\Models\\VacationAppContext.cs",
+  "SelectedNode": "\\EmployeePortal.sln",
   "PreviewInSolutionExplorer": false
 }

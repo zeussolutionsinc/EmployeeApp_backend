@@ -108,4 +108,8 @@ public partial class H1bentry
 
     [Column("status")]
     public bool? Status { get; set; }
+
+    [Column("approval_status")]
+    [StringLength(50)]
+    public string? ApprovalStatus { get; set; }
 }

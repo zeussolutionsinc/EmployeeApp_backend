@@ -33,7 +33,7 @@ builder.Services.AddLogging(logging =>
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSpecificOrigin",
-        policy => policy.WithOrigins("http://localhost:5173")  // Ensure this is the correct URL
+        policy => policy.WithOrigins("http://localhost:3000")  // Ensure this is the correct URL
                         .AllowAnyHeader()
                         .AllowAnyMethod());
 });

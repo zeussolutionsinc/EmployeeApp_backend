@@ -3,31 +3,76 @@ using EmployeePortal.DTO;
 using Microsoft.AspNetCore.Mvc;
 using System.Text;
 using System.Threading.Tasks;
+using Azure.Storage.Blobs;
 using System.Collections.Generic;
 
 namespace EmployeePortal.Controllers
 {
+
     [Route("api/[controller]")]
     [ApiController]
     public class AdminH1bcontroller : ControllerBase
     {
         private readonly EmpPortalContext _context;
         private readonly ILogger<AdminH1bcontroller> _logger;
+        private readonly IConfiguration _configuration;
 
-        public AdminH1bcontroller(EmpPortalContext context, ILogger<AdminH1bcontroller> logger)
+        public AdminH1bcontroller(EmpPortalContext context, ILogger<AdminH1bcontroller> logger, IConfiguration configuration)
         {
             _context = context;
             _logger = logger;
+            _configuration = configuration;
         }
+
+        [HttpGet("resume/{blobName}")]
+        public async Task<IActionResult> GetResume(string blobName)
+        {
+            try
+            {
+                string connectionString = _configuration["AzureBlobStorage:H1B:ConnectionString"];
+                string containerName = _configuration["AzureBlobStorage:H1B:ContainerName"];
+
+                BlobServiceClient blobServiceClient = new BlobServiceClient(connectionString);
+                BlobContainerClient containerClient = blobServiceClient.GetBlobContainerClient(containerName);
+                BlobClient blobClient = containerClient.GetBlobClient(blobName);
+
+                if (await blobClient.ExistsAsync())
+                {
+                    var stream = await blobClient.OpenReadAsync();
+                    var contentType = "application/octet-stream";
+                    if (blobName.EndsWith(".pdf"))
+                    {
+                        contentType = "application/pdf";
+                    }
+                    else if (blobName.EndsWith(".doc") || blobName.EndsWith(".docx"))
+                    {
+                        contentType = "application/msword";
+                    }
+                    // Add other content types as necessary
+
+                    return File(stream, contentType, blobName, true);
+                }
+                else
+                {
+                    return NotFound();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving resume from blob storage");
+                return StatusCode(500, "Internal server error");
+            }
+        }
+
 
         [HttpGet]
         public async Task<IActionResult> GetForm()
         {
             try
             {
-                // Query the database for entries with status = false
+                // Query the database for entries with approval_status = "Pending"
                 var entries = await _context.H1bentries
-                                            .Where(entry => entry.Status == false)
+                                            .Where(entry => entry.ApprovalStatus == "Pending")
                                             .ToListAsync();
 
                 // Map the results to DTOs
@@ -41,6 +86,7 @@ namespace EmployeePortal.Controllers
                 return StatusCode(500, "Internal server error");
             }
         }
+
 
         private AdminH1bDTO MapToDTO(H1bentry result)
         {
@@ -67,9 +113,38 @@ namespace EmployeePortal.Controllers
                 registrationId = result.RegistrationId,
                 degreeMajor = result.DegreeMajor,
                 resume = result.Resume,
-                status = result.Status
-            };
+                ApprovalStatus = result.ApprovalStatus // Ensure this field is included in your DTO
+    };
         }
+
+        [HttpPut("{registrationId}/updateStatus")]
+        public async Task<IActionResult> UpdateApprovalStatus(string registrationId, [FromQuery] string status)
+        {
+            if (string.IsNullOrEmpty(status))
+            {
+                return BadRequest("Status is required");
+            }
+
+            var h1bentry = await _context.H1bentries.FirstOrDefaultAsync(entry => entry.RegistrationId == registrationId);
+            if (h1bentry == null)
+            {
+                return NotFound($"Entry with registration ID: {registrationId} not found.");
+            }
+
+            h1bentry.ApprovalStatus = status;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+                return Ok(new { message = "Status updated successfully!" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while updating the approval status");
+                return StatusCode(500, "Internal server error");
+            }
+        }
+
 
         [HttpPut("{registrationId}")]
         public async Task<IActionResult> AdminUpdateH1b(string registrationId, [FromBody] H1bDTO h1bDto)

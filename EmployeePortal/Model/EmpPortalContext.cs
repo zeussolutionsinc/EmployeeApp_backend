@@ -49,7 +49,9 @@ public partial class EmpPortalContext : DbContext
 
     public virtual DbSet<VacationAppItem> VacationAppItems { get; set; }
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder){ }
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseSqlServer("Server=tcp:envoyapp.database.windows.net;Initial Catalog=EmployeePortal;Persist Security Info=False;User ID=zenvoadmin;Password=Kesh1v1@4321$%;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -126,11 +128,17 @@ public partial class EmpPortalContext : DbContext
         {
             entity.ToTable("EmployeeLogin", tb => tb.HasTrigger("tr_EmployeeLogin"));
 
+            entity.Property(e => e.EmployeeId).ValueGeneratedNever();
             entity.Property(e => e.WhatOperation).IsFixedLength();
+
+            entity.HasOne(d => d.Employee).WithOne(p => p.EmployeeLogin)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_EmployeeLogin_Employee");
         });
 
         modelBuilder.Entity<H1bentriesH>(entity =>
         {
+            entity.Property(e => e.ApprovalStatus).HasDefaultValue(false);
             entity.Property(e => e.WhatOperation).IsFixedLength();
         });
 
@@ -138,6 +146,7 @@ public partial class EmpPortalContext : DbContext
         {
             entity.ToTable("H1Bentries", tb => tb.HasTrigger("tr_H1Bentries"));
 
+            entity.Property(e => e.ApprovalStatus).HasDefaultValue("Pending");
             entity.Property(e => e.CreatedTime).HasDefaultValueSql("(sysutcdatetime())");
             entity.Property(e => e.UpdatedTime).HasDefaultValueSql("(sysutcdatetime())");
             entity.Property(e => e.WhatOperation).IsFixedLength();
@@ -203,6 +212,11 @@ public partial class EmpPortalContext : DbContext
         modelBuilder.Entity<TimeSheetH>(entity =>
         {
             entity.Property(e => e.WhatOperation).IsFixedLength();
+        });
+
+        modelBuilder.Entity<VacationAppItem>(entity =>
+        {
+            entity.Property(e => e.ApprovalStatus).HasDefaultValue("Pending");
         });
 
         OnModelCreatingPartial(modelBuilder);

@@ -67,6 +67,9 @@ public partial class Employee
     [InverseProperty("InverseCreatedUserNavigation")]
     public virtual Employee? CreatedUserNavigation { get; set; }
 
+    [InverseProperty("Employee")]
+    public virtual EmployeeLogin? EmployeeLogin { get; set; }
+
     [InverseProperty("CreatedUserNavigation")]
     public virtual ICollection<Employee> InverseCreatedUserNavigation { get; set; } = new List<Employee>();
 
