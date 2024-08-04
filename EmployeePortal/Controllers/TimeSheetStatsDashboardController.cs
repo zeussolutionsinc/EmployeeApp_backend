@@ -75,10 +75,11 @@ namespace EmployeePortal.Controllers
                                 .Distinct()
                                 .Count();
 
-            var currentProjects = _context.ProjectXemployees
+            var tsfreq = _context.Employees
                                           .Where(pe => pe.EmployeeId == Employee)
-                                          .Select(pe => pe.ProjectId)
-                                          .ToList();
+                                          .Select(pe => pe.Tsfreq)
+                                          .FirstOrDefault();
+                                          
 
             var results = new TimeSheetStatsDashboardDTO()
             {
@@ -87,7 +88,7 @@ namespace EmployeePortal.Controllers
                 RejectedRecords = rejected,
                 SubmittedRecords = submitted,
                 TotalRecords = total,
-                CurrentProjects = currentProjects
+                TimeSheetFreq = tsfreq?.Trim()
 
             };
 

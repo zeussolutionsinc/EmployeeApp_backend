@@ -116,4 +116,7 @@ public partial class H1bentriesH
 
     [Column("status")]
     public bool? Status { get; set; }
+
+    [Column("approval_status")]
+    public bool? ApprovalStatus { get; set; }
 }

@@ -23,8 +23,6 @@ public partial class VacationAppItem
 
     public DateOnly VacationEnddate { get; set; }
 
-    public bool ApprovedStatus { get; set; }
-
     [Column("isManager")]
     public bool IsManager { get; set; }
 
@@ -43,4 +41,7 @@ public partial class VacationAppItem
     public string? Email { get; set; }
 
     public string? AuthId { get; set; }
+
+    [Column("approval_status")]
+    public string ApprovalStatus { get; set; } = null!;
 }

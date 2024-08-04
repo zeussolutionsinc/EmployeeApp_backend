@@ -21,62 +21,56 @@ namespace EmployeePortal.Controllers
             _logger = logger; // Initialize the logger correctly
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetForm([FromQuery] string registrationNumber = null, [FromQuery] string emailId = null, [FromQuery] string passportNumber = null)
+        [HttpGet("authid/{authid}")]
+        public async Task<IActionResult> GetForm(string authid)
         {
-            if (!string.IsNullOrEmpty(registrationNumber))
+            var result = await _context.H1bentries.FirstOrDefaultAsync(entry => entry.AuthId == authid);
+            if (result == null)
             {
-                // Option #1: Query based on registration number
-                return await GetFormByRegistrationNumber(registrationNumber);
+                return NoContent();
             }
-            else if (!string.IsNullOrEmpty(emailId) && !string.IsNullOrEmpty(passportNumber))
-            {
-                // Option #2: Query based on email and passport number
-                return await GetFormByEmailAndPassport(emailId, passportNumber);
-            }
-            else
-            {
-                // Invalid request
-                return BadRequest("Invalid parameters for querying the form data.");
-            }
+            var dto = MapToDTO(result);
+
+            return Ok(dto);
         }
+
 
         // Helper method for option #1: Query based on registration number
-        private async Task<IActionResult> GetFormByRegistrationNumber(string registrationNumber)
-        {
-            // Attempt to retrieve the entry from the database based on registration number
-            var result = await _context.H1bentries.FirstOrDefaultAsync(entry => entry.RegistrationId == registrationNumber);
+        //private async Task<IActionResult> GetFormByRegistrationNumber(string registrationNumber)
+        //{
+        //    // Attempt to retrieve the entry from the database based on registration number
+        //    var result = await _context.H1bentries.FirstOrDefaultAsync(entry => entry.RegistrationId == registrationNumber);
 
-            // Check if the result is null
-            if (result == null)
-            {
-                return NotFound("No matching record found!");
-            }
+        //    // Check if the result is null
+        //    if (result == null)
+        //    {
+        //        return NotFound("No matching record found!");
+        //    }
 
-            // Map the result to a DTO
-            var dto = MapToDTO(result);
+        //    // Map the result to a DTO
+        //    var dto = MapToDTO(result);
 
-            return Ok(dto);
-        }
+        //    return Ok(dto);
+        //}
 
 
-        // Helper method for option #2: Query based on email and passport number
-        private async Task<IActionResult> GetFormByEmailAndPassport(string emailId, string passportNumber)
-        {
-            // Attempt to retrieve the entry from the database based on email and passport number
-            var result = await _context.H1bentries.FirstOrDefaultAsync(entry => entry.Email == emailId && entry.PassportNumber == passportNumber);
+        //// Helper method for option #2: Query based on email and passport number
+        //private async Task<IActionResult> GetFormByEmailAndPassport(string emailId, string passportNumber)
+        //{
+        //    // Attempt to retrieve the entry from the database based on email and passport number
+        //    var result = await _context.H1bentries.FirstOrDefaultAsync(entry => entry.Email == emailId && entry.PassportNumber == passportNumber);
 
-            // Check if the result is null
-            if (result == null)
-            {
-                return NotFound("No matching record found!");
-            }
+        //    // Check if the result is null
+        //    if (result == null)
+        //    {
+        //        return NotFound("No matching record found!");
+        //    }
 
-            // Map the result to a DTO
-            var dto = MapToDTO(result);
+        //    // Map the result to a DTO
+        //    var dto = MapToDTO(result);
 
-            return Ok(dto);
-        }
+        //    return Ok(dto);
+        //}
 
 
         // Map H1bentry entity to H1bDTO
@@ -131,9 +125,9 @@ namespace EmployeePortal.Controllers
         }
 
 
-        [HttpPost]
+        [HttpPost("authid/{authid}")]
         //public async Task<IActionResult> CreateH1b([FromForm] H1bDTO h1bDto, [FromForm] IFormFile file)
-        public async Task<IActionResult> CreateH1b([FromBody] H1bDTO h1bDto)
+        public async Task<IActionResult> CreateH1b(string authid, [FromBody] H1bDTO h1bDto)
         {
             if (h1bDto == null)
             {
@@ -180,6 +174,8 @@ namespace EmployeePortal.Controllers
             h1bentry.WhatOperation = "I";
             h1bentry.CreatedUser = h1bDto.email;
             h1bentry.Resume = h1bDto.resume;
+            h1bentry.AuthId = authid;
+       
             // TODO check if this registration number already exists 
             h1bentry.RegistrationId = GenerateRandomAlphaNumericId();
 

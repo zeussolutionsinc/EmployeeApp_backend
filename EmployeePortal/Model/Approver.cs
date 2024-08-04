@@ -30,19 +30,4 @@ public partial class Approver
 
     [Column("updated_time")]
     public DateTime? UpdatedTime { get; set; }
-
-    [ForeignKey("CreatedUser")]
-    [InverseProperty("ApproverCreatedUserNavigations")]
-    public virtual Employee? CreatedUserNavigation { get; set; }
-
-    [ForeignKey("EmployeeId")]
-    [InverseProperty("ApproverEmployees")]
-    public virtual Employee? Employee { get; set; }
-
-    [InverseProperty("ApprovedByNavigation")]
-    public virtual ICollection<TimeSheet> TimeSheets { get; set; } = new List<TimeSheet>();
-
-    [ForeignKey("UpdatedUser")]
-    [InverseProperty("ApproverUpdatedUserNavigations")]
-    public virtual Employee? UpdatedUserNavigation { get; set; }
 }

@@ -62,7 +62,8 @@ namespace EmployeePortal.Controllers
                     ProjectId = ts.ProjectId,
                     Date = ts.WorkingDate.Value,
                     Hours = ts.WorkingHours.HasValue ? (int)ts.WorkingHours.Value : 0,
-                    ApprovalStatus = ts.ApprovalStatus
+                    ApprovalStatus = ts.ApprovalStatus,
+                    RecordNumber = ts.RecordNumber
                 }).ToList();
 
 
@@ -72,7 +73,8 @@ namespace EmployeePortal.Controllers
                 ProjectId = r.ProjectId,
                 WorkingDate = r.Date,
                 Hours = r.Hours,
-                ApprovalStatus = r.ApprovalStatus
+                ApprovalStatus = r.ApprovalStatus,
+                RecordNumber = r.RecordNumber
             }).ToList();
 
 
@@ -139,109 +141,171 @@ namespace EmployeePortal.Controllers
                 return BadRequest("No data is received for the time sheet entry.");
             }
 
-            var recordNo = GenerateRecordNumber();
             bool newEntriesCreated = false;
 
-            using (var transaction = _context.Database.BeginTransaction())
+            try
             {
-                try
-                {
-                    var timeSheetEntries = new List<TimeSheet>();
-                    foreach (var entry in timeSheetEntryDto.ProjectDateHours)
-                    {
-                        var existingEntry = _context.TimeSheets.FirstOrDefault(ts =>
-                            ts.EmployeeId == timeSheetEntryDto.EmployeeId &&
-                            ts.ProjectId == entry.ProjectId &&
-                            ts.WorkingDate == entry.WorkingDate);
+                var timeSheetFreq = _context.Employees
+                                            .Where(e => e.EmployeeId == timeSheetEntryDto.EmployeeId)
+                                            .Select(e => e.Tsfreq.Trim())
+                                            .FirstOrDefault();
 
-                        if (existingEntry != null && existingEntry.ApprovalStatus != "A" )
+                using (var transaction = _context.Database.BeginTransaction())
+                {
+                    try
+                    {
+                        var timeSheetEntries = new List<TimeSheet>();
+                        var sortedEntries = timeSheetEntryDto.ProjectDateHours.OrderBy(e => e.WorkingDate).ToList();
+                        string recordNo = null;
+                        DateOnly? previousPeriodStartDate = null;
+
+                        foreach (var entry in sortedEntries)
                         {
-                            if (existingEntry.WorkingHours != entry.Hours && draftOrSave != entry.ApprovalStatus)
+                            DateTime currentEntryDate = entry.WorkingDate.ToDateTime(TimeOnly.MinValue);
+                            DateOnly periodStartDate = DateOnly.FromDateTime(currentEntryDate);
+                            DateOnly periodEndDate = periodStartDate;
+
+                            if (timeSheetFreq == "W")
                             {
-                                await UpdateTimeSheet(existingEntry, entry, timeSheetEntryDto.SubmissionDate, draftOrSave);
+                                // Calculate the start of the week (Sunday)
+                                int daysToSubtract = (int)currentEntryDate.DayOfWeek;
+                                periodStartDate = DateOnly.FromDateTime(currentEntryDate.AddDays(-daysToSubtract));
+                                periodEndDate = periodStartDate.AddDays(6);
                             }
-                            else if (existingEntry.WorkingHours != entry.Hours && draftOrSave == entry.ApprovalStatus)
+                            else if (timeSheetFreq == "B")
                             {
-                                await UpdateTimeSheet(existingEntry, entry, timeSheetEntryDto.SubmissionDate, draftOrSave);
+                                // Calculate the start of the bi-weekly period (Sunday)
+                                int daysToSubtract = (int)currentEntryDate.DayOfWeek;
+                                periodStartDate = DateOnly.FromDateTime(currentEntryDate.AddDays(-daysToSubtract));
+                                periodEndDate = periodStartDate.AddDays(13);
                             }
-                            else if (existingEntry.WorkingHours == entry.Hours && draftOrSave != entry.ApprovalStatus)
+                            else if (timeSheetFreq == "M")
                             {
-                                await UpdateTimeSheet(existingEntry, entry, timeSheetEntryDto.SubmissionDate, draftOrSave);
+                                periodStartDate = new DateOnly(currentEntryDate.Year, currentEntryDate.Month, 1);
+                                periodEndDate = periodStartDate.AddMonths(1).AddDays(-1);
                             }
-                            continue;
+
+                            var existingRecord = _context.TimeSheets
+                                .Where(ts => ts.EmployeeId == timeSheetEntryDto.EmployeeId && ts.WorkingDate >= periodStartDate && ts.WorkingDate <= periodEndDate)
+                                .OrderByDescending(ts => ts.WorkingDate)
+                                .Select(ts => ts.RecordNumber)
+                                .FirstOrDefault();
+
+                            if (existingRecord != null)
+                            {
+                                recordNo = existingRecord;
+                            }
+                            else if (previousPeriodStartDate == null || periodStartDate != previousPeriodStartDate)
+                            {
+                                recordNo = RecordGenerator.GenerateRecordNumber(timeSheetEntryDto.EmployeeId);
+                                previousPeriodStartDate = periodStartDate;
+                            }
+
+                            var existingEntry = _context.TimeSheets.FirstOrDefault(ts =>
+                                ts.EmployeeId == timeSheetEntryDto.EmployeeId &&
+                                ts.ProjectId == entry.ProjectId &&
+                                ts.WorkingDate == entry.WorkingDate);
+
+                            if (existingEntry != null)
+                            {
+                                if (existingEntry.ApprovalStatus != "A")
+                                {
+                                    var updateResult = await UpdateTimeSheet(existingEntry, entry, timeSheetEntryDto.SubmissionDate, draftOrSave);
+                                    if (updateResult is OkObjectResult)
+                                    {
+                                        newEntriesCreated = true; // Set this to true to indicate updates were made
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                var appStat = draftOrSave == "Draft" ? "P" : "S";
+
+                                var timesheetEntry = new TimeSheet
+                                {
+                                    EmployeeId = timeSheetEntryDto.EmployeeId,
+                                    ProjectId = entry.ProjectId,
+                                    WorkingDate = entry.WorkingDate,
+                                    WorkingHours = (short)entry.Hours,
+                                    CreatedTime = DateTime.UtcNow,
+                                    UpdatedTime = DateTime.UtcNow,
+                                    WhatOperation = "I",
+                                    SubmissionDate = timeSheetEntryDto.SubmissionDate,
+                                    ApprovedBy = timeSheetEntryDto.Approver,
+                                    RecordNumber = recordNo,
+                                    ApprovalStatus = appStat
+                                };
+                                timeSheetEntries.Add(timesheetEntry);
+                                newEntriesCreated = true;
+                            }
                         }
 
-                        var appStat = draftOrSave == "Draft" ? "P" : "S";
-
-                        var timesheetEntry = new TimeSheet
+                        if (newEntriesCreated)
                         {
-                            EmployeeId = timeSheetEntryDto.EmployeeId,
-                            ProjectId = entry.ProjectId,
-                            WorkingDate = entry.WorkingDate,
-                            WorkingHours = (short)entry.Hours,
-                            CreatedTime = DateTime.UtcNow,
-                            UpdatedTime = DateTime.UtcNow,
-                            WhatOperation = "I",
-                            SubmissionDate = timeSheetEntryDto.SubmissionDate,
-                            ApprovedBy = timeSheetEntryDto.Approver,
-                            RecordNumber = recordNo,
-                            ApprovalStatus = appStat
-                        };
-                        timeSheetEntries.Add(timesheetEntry);
-                        newEntriesCreated = true;
+                            _context.TimeSheets.AddRange(timeSheetEntries);
+                            await _context.SaveChangesAsync();
+                            transaction.Commit();
+                            return Ok(new { Message = $"Submission Successful" });
+                        }
+                        else
+                        {
+                            return Ok(new { Message = "Updated all the entries." });
+                        }
                     }
-
-                    if (newEntriesCreated)
+                    catch (Exception ex)
                     {
-                        _context.TimeSheets.AddRange(timeSheetEntries);
-                        await _context.SaveChangesAsync();
-                        transaction.Commit();
-                        return Ok(new { Message = $"Submission Successful, your record Number: {recordNo}" });
+                        transaction.Rollback();
+                        _logger.LogError($"Error saving time sheet entry: {ex}");
+                        return StatusCode(500, "Internal Server Error");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"General Error: {ex}");
+                return StatusCode(500, "Internal Server Error");
+            }
+        }
+
+
+
+
+
+
+        public static class RecordGenerator
+        {
+            private static Dictionary<Guid, int> userRecordNumbers = new Dictionary<Guid, int>();
+            private static readonly object lockObj = new object();
+
+            public static string GenerateRecordNumber(Guid? userId)
+            {
+                if (userId == null)
+                {
+                    throw new ArgumentNullException(nameof(userId), "User ID cannot be null");
+                }
+
+                lock (lockObj)
+                {
+                    if (!userRecordNumbers.ContainsKey(userId.Value))
+                    {
+                        userRecordNumbers[userId.Value] = 10000;
                     }
                     else
                     {
-                        return Ok(new { Message = "Updated all the entries." });
+                        userRecordNumbers[userId.Value]++;
                     }
-                }
-                catch (Exception ex)
-                {
-                    transaction.Rollback();
-                    _logger.LogError($"Error saving time sheet entry: {ex}");
-                    return StatusCode(500, "Internal Server Error");
+
+                    return $"{userRecordNumbers[userId.Value]}";
                 }
             }
         }
 
-        static string GenerateRecordNumber()
-        {
-            Random rand = new Random();
-            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"; // Characters to choose from
-            StringBuilder sb = new StringBuilder(5);
-            sb.Append('R');
-
-            // Generate a random character from the 'chars' string and append it to the StringBuilder 'length' times
-            for (int i = 1; i < 5; i++)
-            {
-                sb.Append(chars[rand.Next(chars.Length)]);
-            }
-            return sb.ToString();
-
-        }
 
         private async Task<IActionResult> UpdateTimeSheet(TimeSheet existingEntry, ProjectDateHoursEntry newData, DateOnly submissionDate, string DraftOrSave)
         {
             _logger.LogInformation($"Updating timesheet for EmployeeID {existingEntry.EmployeeId} on date {existingEntry.WorkingDate}");
 
-            var appStat = "";
-            if (DraftOrSave == "Save")
-            {
-                appStat = "S";
-            }
-            else 
-            {
-                appStat = "P";
-            }
-
+            var appStat = DraftOrSave == "Save" ? "S" : "P";
 
             if (existingEntry.WorkingHours != (short)newData.Hours)
             {
@@ -250,24 +314,22 @@ namespace EmployeePortal.Controllers
             existingEntry.UpdatedTime = DateTime.UtcNow;
             existingEntry.WhatOperation = "U";
             existingEntry.SubmissionDate = submissionDate;
-            if (existingEntry.ApprovalStatus != appStat)
-            {
-               existingEntry.ApprovalStatus = appStat;
-            }
+            existingEntry.ApprovalStatus = appStat; // Always update the status here
 
             try
             {
-               _context.TimeSheets.Update(existingEntry);
-               int changes = await _context.SaveChangesAsync();
-               _logger.LogInformation($"Changes saved to database. Number of records updated: {changes}");
+                _context.TimeSheets.Update(existingEntry);
+                int changes = await _context.SaveChangesAsync();
+                _logger.LogInformation($"Changes saved to database. Number of records updated: {changes}");
 
-               return Ok(new { message = "Timesheet has been updated successfully!" });
+                return Ok(new { message = "Timesheet has been updated successfully!" });
             }
             catch (Exception ex)
             {
                 _logger.LogError($"Error updating the time sheet: {ex}");
                 return StatusCode(500, "Internal Server Error");
-            }    
+            }
         }
+
     }
 }

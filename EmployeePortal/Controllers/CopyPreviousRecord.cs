@@ -101,7 +101,10 @@ namespace EmployeePortal.Controllers
         [HttpGet]
         public IActionResult GetCopyPrevRecord(string EmpId)
         {
-            var empGuid = new Guid(EmpId);
+            if (!Guid.TryParse(EmpId, out Guid empGuid))
+            {
+                return BadRequest("Invalid GUID format for Employee ID.");
+            }
 
             var today = DateOnly.FromDateTime(DateTime.Today);
             var firstDayOfMonth = new DateOnly(today.Year, today.Month, 1);

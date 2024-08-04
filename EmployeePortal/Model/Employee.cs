@@ -54,18 +54,12 @@ public partial class Employee
     [Unicode(false)]
     public string? Tsfreq { get; set; }
 
-    [InverseProperty("CreatedUserNavigation")]
-    public virtual ICollection<Approver> ApproverCreatedUserNavigations { get; set; } = new List<Approver>();
-
-    [InverseProperty("Employee")]
-    public virtual ICollection<Approver> ApproverEmployees { get; set; } = new List<Approver>();
-
-    [InverseProperty("UpdatedUserNavigation")]
-    public virtual ICollection<Approver> ApproverUpdatedUserNavigations { get; set; } = new List<Approver>();
-
     [ForeignKey("CreatedUser")]
     [InverseProperty("InverseCreatedUserNavigation")]
     public virtual Employee? CreatedUserNavigation { get; set; }
+
+    [InverseProperty("Employee")]
+    public virtual EmployeeLogin? EmployeeLogin { get; set; }
 
     [InverseProperty("CreatedUserNavigation")]
     public virtual ICollection<Employee> InverseCreatedUserNavigation { get; set; } = new List<Employee>();

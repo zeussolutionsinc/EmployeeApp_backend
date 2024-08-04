@@ -18,13 +18,14 @@ namespace EmployeePortal.DTO
         public string? Secret { get; set; }
         public DateOnly VacationStartdate { get; set; }
         public DateOnly VacationEnddate { get; set; }
-        public bool ApprovedStatus { get; set; }
+
         public bool isManager { get; set; }
         public String? ImageUrl { get; set; }
         public String? fileupload { get; set; }
         public String? Endhours { get; set; }
         public String? Starthours { get; set; }
         public bool agree { get; set; }
+        public String? ApprovalStatus { get; set; }       
     }
 }
 

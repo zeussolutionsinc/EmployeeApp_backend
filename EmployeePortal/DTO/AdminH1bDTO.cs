@@ -62,5 +62,7 @@ namespace EmployeePortal.DTO
         public string resume {  get; set; }
 
         public bool? status { get; set; }
+
+        public String? ApprovalStatus { get; set; }
     }
 }

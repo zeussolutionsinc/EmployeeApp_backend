@@ -7,7 +7,7 @@
         public int PendingRecords { get; set; }
         public int SubmittedRecords { get; set; }
         public int TotalRecords { get; set; }
-        public List<string> CurrentProjects { get; set; }
+        public string TimeSheetFreq { get; set; }
 
     }
 }

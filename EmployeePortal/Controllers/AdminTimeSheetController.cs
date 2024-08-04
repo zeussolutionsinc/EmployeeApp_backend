@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace EmployeePortal.Controllers
 {
@@ -20,42 +21,49 @@ namespace EmployeePortal.Controllers
             _logger = logger;
         }
 
-        // New endpoint to fetch all employee IDs and their available timesheet months with approval status
-        [HttpGet("all")]
-        public IActionResult GetAllEmployeesWithMonths()
+        [HttpGet("all/{authId}")]
+        public async Task<IActionResult> GetEmployeesForAdmin(string authId)
         {
-            var employeeIds = _context.TimeSheets
-                .Where(ts => ts.WorkingDate.HasValue)
-                .Select(ts => ts.EmployeeId)
-                .Distinct()
+            // Get EmployeeId from EmployeeLogin table using the provided authId
+            var employeeLogin = await _context.EmployeeLogins.FirstOrDefaultAsync(el => el.AuthId == authId);
+            if (employeeLogin == null)
+            {
+                return NotFound("Admin not found.");
+            }
+            var adminEmployeeId = employeeLogin.EmployeeId;
+
+            // Get the list of EmployeeIds that this admin can approve from ApproverXEmployee table
+            var approvableEmployeeIds = _context.ApproverXemployees
+                .Where(axe => axe.Approver == adminEmployeeId)
+                .Select(axe => axe.EmployeeId)
                 .ToList();
 
+            // Get the employees and their timesheet data
             var employees = _context.Employees
-                .Where(emp => employeeIds.Contains(emp.EmployeeId))
+                .Where(emp => approvableEmployeeIds.Contains(emp.EmployeeId))
                 .Select(emp => new
                 {
                     emp.EmployeeId,
-                    Name = emp.FirstName + " " + emp.LastName
+                    Name = emp.FirstName + " " + emp.LastName,
+                    TSFreq = emp.Tsfreq.Trim(),
                 })
                 .ToList();
 
             var employeesData = _context.TimeSheets
-                .Where(ts => ts.WorkingDate.HasValue)
+                .Where(ts => ts.WorkingDate.HasValue && approvableEmployeeIds.Contains(ts.EmployeeId))
                 .ToList()
                 .GroupBy(ts => ts.EmployeeId)
                 .Select(g => new
                 {
                     EmployeeId = g.Key,
-                    Months = g
-                        .GroupBy(ts => new { ts.WorkingDate.Value.Year, ts.WorkingDate.Value.Month })
-                        .Select(mg => new
+                    Records = g
+                        .GroupBy(ts => ts.RecordNumber)
+                        .Select(rg => new
                         {
-                            Year = mg.Key.Year,
-                            Month = mg.Key.Month,
-                            ApprovalStatus = mg.Any(ts => ts.ApprovalStatus == "P") ? "P" : "A"
+                            RecordNumber = rg.Key,
+                            ApprovalStatus = rg.FirstOrDefault().ApprovalStatus,
                         })
-                        .OrderBy(date => date.Year)
-                        .ThenBy(date => date.Month)
+                        .OrderBy(r => r.RecordNumber)
                         .ToList()
                 })
                 .ToList();
@@ -67,7 +75,8 @@ namespace EmployeePortal.Controllers
                 {
                     e.EmployeeId,
                     e.Name,
-                    ed.Months
+                    TSFreq = e.TSFreq == "M" ? "Monthly" : e.TSFreq == "W" ? "Weekly" : e.TSFreq == "B" ? "Bi-weekly" : e.TSFreq, // Map the TSFreq values
+                    ed.Records
                 }).ToList();
 
             if (!result.Any())
@@ -77,6 +86,8 @@ namespace EmployeePortal.Controllers
 
             return Ok(result);
         }
+
+
 
 
         [HttpGet("{employeeId}")]
@@ -138,7 +149,8 @@ namespace EmployeePortal.Controllers
                 {
                     ProjectId = ts.ProjectId,
                     WorkingDate = ts.WorkingDate.Value,
-                    Hours = ts.WorkingHours.HasValue ? (int)ts.WorkingHours.Value : 0
+                    Hours = ts.WorkingHours.HasValue ? (int)ts.WorkingHours.Value : 0,
+                    RecordNumber = ts.RecordNumber
                 }).ToList();
 
             if (!timesheets.Any())
@@ -158,56 +170,75 @@ namespace EmployeePortal.Controllers
                 { "S", "Submitted" }
             };
 
-        // New endpoint to fetch timesheets for a specific employee and status
-        // New endpoint to fetch timesheets for a specific employee and status
-        [HttpGet("{employeeId}/status")]
-        public IActionResult GetTimeSheetsByStatus(Guid employeeId, [FromQuery] string status)
-        {
-            var timesheets = _context.TimeSheets
-                .Where(ts => ts.EmployeeId == employeeId)
-                .Select(ts => new
-                {
-                    ts.ProjectId,
-                    ts.WorkingDate,
-                    Hours = ts.WorkingHours.HasValue ? (int)ts.WorkingHours.Value : 0,
-                    ts.ApprovalStatus,
-                    ts.ApprovedBy
-                }).ToList();
 
-            if (!timesheets.Any())
+        [HttpGet("{employeeId}/status")]
+        public IActionResult GetEmployeeTimesheetsByStatus(Guid employeeId, [FromQuery] string status)
+        {
+            // Fetch employee details
+            var employee = _context.Employees
+                .Where(emp => emp.EmployeeId == employeeId)
+                .Select(emp => new
+                {
+                    emp.EmployeeId,
+                    Name = emp.FirstName + " " + emp.LastName
+                })
+                .FirstOrDefault();
+
+            if (employee == null)
             {
-                return NotFound($"No timesheets found for employee {employeeId}.");
+                return NotFound($"Employee with ID {employeeId} not found.");
             }
 
-            var timesheetsGroupedByMonth = timesheets
-                .GroupBy(ts => new { ts.WorkingDate.Value.Year, ts.WorkingDate.Value.Month })
-                .Select(g => new
+            // Fetch and filter timesheets by status for the specified employee
+            var timesheets = _context.TimeSheets
+                .Where(ts => ts.EmployeeId == employeeId && ts.ApprovalStatus == status)
+                .ToList()
+                .GroupBy(ts => new { ts.RecordNumber, Year = ts.WorkingDate.Value.Year, Month = ts.WorkingDate.Value.Month })
+                .Select(rg => new
                 {
-                    Year = g.Key.Year,
-                    Month = g.Key.Month,
-                    Status = g.Any(ts => ts.ApprovalStatus == "P") ? "Pending" :
-                             g.All(ts => ts.ApprovalStatus == "A") ? "Approved" :
-                             g.All(ts => ts.ApprovalStatus == "R") ? "Rejected" :
-                             g.All(ts => ts.ApprovalStatus == "S") ? "Submitted" : "Mixed",
-                    Timesheets = g.Select(ts => new ProjectDateHoursEntry
+                    RecordNumber = rg.Key.RecordNumber,
+                    Year = rg.Key.Year,
+                    Month = rg.Key.Month,
+                    ApprovalStatus = rg.FirstOrDefault().ApprovalStatus,
+                    Timesheets = rg.Select(ts => new
                     {
-                        ProjectId = ts.ProjectId,
-                        WorkingDate = ts.WorkingDate.Value,
-                        Hours = ts.Hours
+                        ts.ProjectId,
+                        ts.EmployeeId,
+                        ts.WorkingDate,
+                        ts.SubmissionDate,
+                        ts.ApprovalStatus,
+                        ts.ApprovedBy,
+                        ts.CreatedUser,
+                        ts.UpdatedUser,
+                        ts.CreatedTime,
+                        ts.UpdatedTime,
+                        ts.WhatOperation,
+                        ts.WorkingHours,
+                        ts.RecordId,
+                        ts.RecordNumber,
+                        ts.WorkingDate.Value.Year,
+                        ts.WorkingDate.Value.Month
                     }).ToList()
-                }).ToList();
-
-            var filteredGroupedByMonth = timesheetsGroupedByMonth
-                .Where(g => g.Status == StatusMapping[status])
+                })
+                .OrderBy(r => r.RecordNumber)
                 .ToList();
 
-            if (!filteredGroupedByMonth.Any())
+            if (!timesheets.Any())
             {
                 return NotFound($"No timesheets found for employee {employeeId} with status {status}.");
             }
 
-            return Ok(filteredGroupedByMonth);
+            // Combine employee details with timesheet data
+            var result = new
+            {
+                employee.EmployeeId,
+                employee.Name,
+                Records = timesheets
+            };
+
+            return Ok(result);
         }
+
 
 
         [HttpPost]
@@ -268,6 +299,7 @@ namespace EmployeePortal.Controllers
             }
         }
 
+        [HttpPost("update")]
         private async Task<IActionResult> UpdateTimeSheet(TimeSheet existingEntry, ProjectDateHoursEntry newData, DateOnly submissionDate)
         {
             _logger.LogInformation($"Updating timesheet for EmployeeID {existingEntry.EmployeeId} on date {existingEntry.WorkingDate}");
@@ -291,5 +323,62 @@ namespace EmployeePortal.Controllers
                 return StatusCode(500, "Internal Server Error");
             }
         }
+
+        [HttpPut("approve")]
+        public async Task<IActionResult> ApproveTimeSheet([FromBody] ApproverTimeSheetAppRej approverTimeSheetAppRej)
+        {
+            return await UpdateApprovalStatus(approverTimeSheetAppRej, "A");
+        }
+
+        [HttpPut("reject")]
+        public async Task<IActionResult> RejectTimeSheet([FromBody] ApproverTimeSheetAppRej approverTimeSheetAppRej)
+        {
+            return await UpdateApprovalStatus(approverTimeSheetAppRej, "R");
+        }
+
+        private async Task<IActionResult> UpdateApprovalStatus(ApproverTimeSheetAppRej approverTimeSheetAppRej, string status)
+        {
+            if (approverTimeSheetAppRej == null || string.IsNullOrEmpty(approverTimeSheetAppRej.RecordNumber) || approverTimeSheetAppRej.EmployeeId == Guid.Empty)
+            {
+                return BadRequest("Invalid data received for updating the approval status.");
+            }
+
+            using (var transaction = await _context.Database.BeginTransactionAsync())
+            {
+                try
+                {
+                    // Fetch all records with the given RecordNumber and EmployeeId
+                    var timesheetEntries = _context.TimeSheets
+                        .Where(ts => ts.RecordNumber == approverTimeSheetAppRej.RecordNumber && ts.EmployeeId == approverTimeSheetAppRej.EmployeeId)
+                        .ToList();
+
+                    if (timesheetEntries.Count == 0)
+                    {
+                        return NotFound($"No timesheet entries found with RecordNumber {approverTimeSheetAppRej.RecordNumber} for EmployeeId {approverTimeSheetAppRej.EmployeeId}");
+                    }
+
+                    // Update the ApprovalStatus for all fetched records
+                    foreach (var entry in timesheetEntries)
+                    {
+                        entry.ApprovalStatus = status;
+                        entry.UpdatedTime = DateTime.Now; // Set updated time to current time
+                    }
+
+                    // Save changes to the database
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    return Ok(new { Message = $"Timesheet records with RecordNumber {approverTimeSheetAppRej.RecordNumber} for EmployeeId {approverTimeSheetAppRej.EmployeeId} have been {status.ToLower()} successfully." });
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    _logger.LogError($"Error updating timesheet approval status: {ex}");
+                    return StatusCode(500, "Internal Server Error");
+                }
+            }
+        }
+
+
     }
 }

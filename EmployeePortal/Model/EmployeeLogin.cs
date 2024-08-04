@@ -6,11 +6,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EmployeePortal.Model;
 
-[Keyless]
 [Table("EmployeeLogin")]
 public partial class EmployeeLogin
 {
-    public Guid? EmployeeId { get; set; }
+    [Key]
+    public Guid EmployeeId { get; set; }
 
     [StringLength(100)]
     [Unicode(false)]
@@ -27,4 +27,8 @@ public partial class EmployeeLogin
     [StringLength(25)]
     [Unicode(false)]
     public string? AuthId { get; set; }
+
+    [ForeignKey("EmployeeId")]
+    [InverseProperty("EmployeeLogin")]
+    public virtual Employee Employee { get; set; } = null!;
 }

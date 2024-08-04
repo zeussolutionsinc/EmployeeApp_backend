@@ -43,9 +43,6 @@ public partial class Project
     [InverseProperty("ProjectCreatedUserNavigations")]
     public virtual Employee? CreatedUserNavigation { get; set; }
 
-    [InverseProperty("Project")]
-    public virtual ICollection<TimeSheet> TimeSheets { get; set; } = new List<TimeSheet>();
-
     [ForeignKey("UpdatedUser")]
     [InverseProperty("ProjectUpdatedUserNavigations")]
     public virtual Employee? UpdatedUserNavigation { get; set; }

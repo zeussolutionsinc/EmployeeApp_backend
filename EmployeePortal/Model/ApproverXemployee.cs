@@ -6,7 +6,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EmployeePortal.Model;
 
-[Keyless]
 [Table("ApproverXEmployee")]
 public partial class ApproverXemployee
 {
@@ -30,15 +29,7 @@ public partial class ApproverXemployee
     [Column("id")]
     public int Id { get; set; }
 
-    [ForeignKey("Approver")]
-    public virtual Approver? ApproverNavigation { get; set; }
-
-    [ForeignKey("CreatedUser")]
-    public virtual Employee? CreatedUserNavigation { get; set; }
-
-    [ForeignKey("EmployeeId")]
-    public virtual Employee? Employee { get; set; }
-
-    [ForeignKey("UpdatedUser")]
-    public virtual Employee? UpdatedUserNavigation { get; set; }
+    [Key]
+    [Column("AXEId")]
+    public Guid Axeid { get; set; }
 }

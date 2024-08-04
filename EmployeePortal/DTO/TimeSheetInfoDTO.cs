@@ -11,6 +11,8 @@ namespace EmployeePortal.DTO
         public int Hours { get; set; }
         public string? ProjectId { get; set; } // Consider making this nullable if applicable.
         public string? ApprovalStatus { get; set; }
+
+        public string? RecordNumber { get; set;}
     }
 
     public class TimeSheetInfoDTO

@@ -90,8 +90,6 @@ public partial class H1bentry
     [Unicode(false)]
     public string? RegistrationId { get; set; }
 
-    [StringLength(255)]
-    [Unicode(false)]
     public string? Resume { get; set; }
 
     [StringLength(75)]
@@ -108,4 +106,12 @@ public partial class H1bentry
 
     [Column("status")]
     public bool? Status { get; set; }
+
+    [Column("approval_status")]
+    [StringLength(50)]
+    public string? ApprovalStatus { get; set; }
+
+    [StringLength(25)]
+    [Unicode(false)]
+    public string? AuthId { get; set; }
 }

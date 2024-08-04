@@ -47,10 +47,6 @@ public partial class TimeSheet
     [Unicode(false)]
     public string? RecordNumber { get; set; }
 
-    [ForeignKey("ApprovedBy")]
-    [InverseProperty("TimeSheets")]
-    public virtual Approver? ApprovedByNavigation { get; set; }
-
     [ForeignKey("CreatedUser")]
     [InverseProperty("TimeSheetCreatedUserNavigations")]
     public virtual Employee? CreatedUserNavigation { get; set; }
@@ -58,10 +54,6 @@ public partial class TimeSheet
     [ForeignKey("EmployeeId")]
     [InverseProperty("TimeSheetEmployees")]
     public virtual Employee? Employee { get; set; }
-
-    [ForeignKey("ProjectId")]
-    [InverseProperty("TimeSheets")]
-    public virtual Project? Project { get; set; }
 
     [ForeignKey("UpdatedUser")]
     [InverseProperty("TimeSheetUpdatedUserNavigations")]

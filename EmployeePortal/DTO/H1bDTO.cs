@@ -71,5 +71,7 @@ namespace EmployeePortal.DTO
         public string linkedInProfile { get; set; }
 
         public string resume {  get; set; }
+
+        
     }
 }
