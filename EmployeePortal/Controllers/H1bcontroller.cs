@@ -35,47 +35,6 @@ namespace EmployeePortal.Controllers
         }
 
 
-        // Helper method for option #1: Query based on registration number
-        //private async Task<IActionResult> GetFormByRegistrationNumber(string registrationNumber)
-        //{
-        //    // Attempt to retrieve the entry from the database based on registration number
-        //    var result = await _context.H1bentries.FirstOrDefaultAsync(entry => entry.RegistrationId == registrationNumber);
-
-        //    // Check if the result is null
-        //    if (result == null)
-        //    {
-        //        return NotFound("No matching record found!");
-        //    }
-
-        //    // Map the result to a DTO
-        //    var dto = MapToDTO(result);
-
-        //    return Ok(dto);
-        //}
-
-
-        //// Helper method for option #2: Query based on email and passport number
-        //private async Task<IActionResult> GetFormByEmailAndPassport(string emailId, string passportNumber)
-        //{
-        //    // Attempt to retrieve the entry from the database based on email and passport number
-        //    var result = await _context.H1bentries.FirstOrDefaultAsync(entry => entry.Email == emailId && entry.PassportNumber == passportNumber);
-
-        //    // Check if the result is null
-        //    if (result == null)
-        //    {
-        //        return NotFound("No matching record found!");
-        //    }
-
-        //    // Map the result to a DTO
-        //    var dto = MapToDTO(result);
-
-        //    return Ok(dto);
-        //}
-
-
-
-
-
         // Map H1bentry entity to H1bDTO
         private H1bDTO MapToDTO(H1bentry result)
         {
