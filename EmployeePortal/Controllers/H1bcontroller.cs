@@ -73,6 +73,9 @@ namespace EmployeePortal.Controllers
         //}
 
 
+
+
+
         // Map H1bentry entity to H1bDTO
         private H1bDTO MapToDTO(H1bentry result)
         {
@@ -126,7 +129,6 @@ namespace EmployeePortal.Controllers
 
 
         [HttpPost("authid/{authid}")]
-        //public async Task<IActionResult> CreateH1b([FromForm] H1bDTO h1bDto, [FromForm] IFormFile file)
         public async Task<IActionResult> CreateH1b(string authid, [FromBody] H1bDTO h1bDto)
         {
             if (h1bDto == null)
@@ -139,45 +141,45 @@ namespace EmployeePortal.Controllers
                 return BadRequest(ModelState);
             }
 
-            H1bentry h1bentry = new H1bentry();
+            // Check if the passport number already exists in the database
+            var existingEntry = await _context.H1bentries
+                                .FirstOrDefaultAsync(entry => entry.PassportNumber == h1bDto.passportNumber);
+            if (existingEntry != null)
+            {
+                return BadRequest("An entry with the same passport number already exists.");
+            }
 
-            h1bentry.PassportNumber = h1bDto.passportNumber;
-            h1bentry.LegalFirstName = h1bDto.legalFirstName;
-            h1bentry.LegalLastName = h1bDto.legalLastName;
-            try
+            H1bentry h1bentry = new H1bentry
             {
-                h1bentry.PassportExpiryDate = DateOnly.Parse(h1bDto.passportExpiryDate);
-            }
-            catch (FormatException)
-            {
-                // Handle the case where the date format is invalid
-                return BadRequest("Invalid date format for passport expiry date");
-            }
-            h1bentry.Email = h1bDto.email;
-            h1bentry.ContactNumber = h1bDto.contactNumber;
-            h1bentry.HighestCollegeDegree = h1bDto.highestEducation;
-            h1bentry.DegreeMajor = h1bDto.degreeMajor;
-            h1bentry.CollegeCity = h1bDto.institutionCity;
-            h1bentry.CollegeName = h1bDto.institutionName;
-            h1bentry.GraduationYear = h1bDto.graduationYear;
-            h1bentry.Opt = h1bDto.onOPT;
-            h1bentry.WorkedInUsa = h1bDto.workedInUS;
-            h1bentry.YearsOfExperience = h1bDto.yearsOfExperience;
-            h1bentry.CurrentEmployer = h1bDto.currentEmployer;
-            h1bentry.CurrentJobTitle = h1bDto.currentJobTitle;
-            h1bentry.TechnicalSkills = h1bDto.primaryTechnicalSkills;
-            //h1bentry.OtherSkills = h1bDto.OtherSkills;
-            h1bentry.ReferralSource = h1bDto.referralSource;
-            h1bentry.LinkedInUrl = h1bDto.linkedInProfile;
-            h1bentry.CreatedTime = DateTime.UtcNow;
-            h1bentry.UpdatedTime = DateTime.UtcNow;
-            h1bentry.WhatOperation = "I";
-            h1bentry.CreatedUser = h1bDto.email;
-            h1bentry.Resume = h1bDto.resume;
-            h1bentry.AuthId = authid;
-       
-            // TODO check if this registration number already exists 
-            h1bentry.RegistrationId = GenerateRandomAlphaNumericId();
+                PassportNumber = h1bDto.passportNumber,
+                LegalFirstName = h1bDto.legalFirstName,
+                LegalLastName = h1bDto.legalLastName,
+                PassportExpiryDate = DateOnly.TryParse(h1bDto.passportExpiryDate, out DateOnly date)
+                                     ? date
+                                     : throw new FormatException("Invalid date format for passport expiry date"),
+                Email = h1bDto.email,
+                ContactNumber = h1bDto.contactNumber,
+                HighestCollegeDegree = h1bDto.highestEducation,
+                DegreeMajor = h1bDto.degreeMajor,
+                CollegeCity = h1bDto.institutionCity,
+                CollegeName = h1bDto.institutionName,
+                GraduationYear = h1bDto.graduationYear,
+                Opt = h1bDto.onOPT,
+                WorkedInUsa = h1bDto.workedInUS,
+                YearsOfExperience = h1bDto.yearsOfExperience,
+                CurrentEmployer = h1bDto.currentEmployer,
+                CurrentJobTitle = h1bDto.currentJobTitle,
+                TechnicalSkills = h1bDto.primaryTechnicalSkills,
+                ReferralSource = h1bDto.referralSource,
+                LinkedInUrl = h1bDto.linkedInProfile,
+                CreatedTime = DateTime.UtcNow,
+                UpdatedTime = DateTime.UtcNow,
+                WhatOperation = "I",
+                CreatedUser = h1bDto.email,
+                Resume = h1bDto.resume,
+                AuthId = authid,
+                RegistrationId = GenerateRandomAlphaNumericId()
+            };
 
             try
             {
@@ -190,9 +192,8 @@ namespace EmployeePortal.Controllers
                 _logger.LogError($"Error saving H1B entry: {ex.Message}");
                 return StatusCode(500, "Internal server error, unable to save the form");
             }
-
-
         }
+
 
 
         [HttpPut("{registrationId}")]
