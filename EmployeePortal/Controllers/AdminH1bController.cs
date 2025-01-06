@@ -70,7 +70,7 @@ namespace EmployeePortal.Controllers
             try
             {
                 // Define the authorized admin's authIds here (hardcoded or from a secure source)
-                var authorizedAdminAuthIds = new List<string> { "674f9c45948b864a9a0abdc3", "674a7b4df099fd1441a0645e" };
+                var authorizedAdminAuthIds = new List<string> { "674f9c45948b864a9a0abdc3", "66afbe9ff30baa7121fa018e" };
 
                 // Check if the provided authId is one of the authorized admin's authIds
                 if (!authorizedAdminAuthIds.Contains(authId))
