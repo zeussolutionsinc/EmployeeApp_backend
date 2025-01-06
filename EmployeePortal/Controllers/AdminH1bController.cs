@@ -65,40 +65,35 @@ namespace EmployeePortal.Controllers
         }
 
 
-        // GET: api/H1bEntries/{authId}
         [HttpGet("authid/{authId}")]
         public async Task<IActionResult> GetForm(string authId)
         {
             try
             {
-                // Get EmployeeId from EmployeeLogin table using the provided authId
-                var employeeLogin = await _context.EmployeeLogins.FirstOrDefaultAsync(el => el.AuthId == authId);
-                if (employeeLogin == null)
+                // Define the authorized admin's authId here (hardcoded or from a secure source)
+                const string authorizedAdminAuthId = "674f9c45948b864a9a0abdc3 "; // Replace this with the actual authId
+
+                // Check if the provided authId exists and matches the authorized admin's authId
+                var isAuthorizedAdmin = await _context.EmployeeLogins
+                    .AnyAsync(el => el.AuthId == authId && el.AuthId == authorizedAdminAuthId);
+
+                if (!isAuthorizedAdmin)
                 {
-                    return NotFound("Admin not found.");
+                    return NotFound("Access denied or employee with the specified authId not found.");
                 }
-                var adminEmployeeId = employeeLogin.EmployeeId;
 
-                // Get the list of EmployeeIds that this admin can approve from ApproverXEmployee table
-                var approvableEmployeeIds = _context.ApproverXemployees
-                    .Where(axe => axe.Approver == adminEmployeeId)
-                    .Select(axe => axe.EmployeeId)
-                    .ToList();
-
-                // Get the list of AuthIds for the approvable employees
-                var approvableAuthIds = await _context.EmployeeLogins
-                    .Where(el => approvableEmployeeIds.Contains(el.EmployeeId))
-                    .Select(el => el.AuthId)
-                    .ToListAsync();
-
-                // Query the database for entries with approval_status = "Pending" and belonging to the approvable AuthIds
+                // Query the database for all H1b entries that are "Pending"
                 var entries = await _context.H1bentries
-                    .Where(entry => entry.ApprovalStatus == "Pending" && approvableAuthIds.Contains(entry.AuthId))
                     .ToListAsync();
 
-                // Map the results to DTOs
+                // If no entries exist, inform the client
+                if (!entries.Any())
+                {
+                    return NotFound("No pending H1b entries found.");
+                }
                 var result = entries.Select(entry => MapToDTO(entry)).ToList();
 
+                // Return the mapped results
                 return Ok(result);
             }
             catch (Exception ex)
@@ -107,7 +102,6 @@ namespace EmployeePortal.Controllers
                 return StatusCode(500, "Internal server error");
             }
         }
-
 
 
 

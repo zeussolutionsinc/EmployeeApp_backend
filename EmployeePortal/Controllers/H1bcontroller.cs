@@ -3,8 +3,6 @@ using EmployeePortal.DTO;
 using Microsoft.AspNetCore.Mvc;
 using System.Text;
 
-
-
 namespace EmployeePortal.Controllers
 {
     [Route("api/[controller]")]
@@ -152,8 +150,6 @@ namespace EmployeePortal.Controllers
                 return StatusCode(500, "Internal server error, unable to save the form");
             }
         }
-
-
 
         [HttpPut("{registrationId}")]
         public async Task<IActionResult> UpdateH1b(string registrationId, [FromBody] H1bDTO h1bDto)

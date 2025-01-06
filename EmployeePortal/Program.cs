@@ -32,11 +32,15 @@ builder.Services.AddLogging(logging =>
 // CORS configuration
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowSpecificOrigin",
-        policy => policy.WithOrigins("http://localhost:3000")  // Ensure this is the correct URL
-                        .AllowAnyHeader()
-                        .AllowAnyMethod());
+    options.AddPolicy("AllowTrustedOrigins", builder =>
+    {
+        builder.WithOrigins("https://zeush1bportal.azurewebsites.net")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
 });
+
+
 
 
 
@@ -46,7 +50,7 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI();
 app.UseHttpsRedirection();
-app.UseCors("AllowSpecificOrigin");
+//app.UseCors("AllowTrustedOrigins");
 //app.UseAuthentication();  // Authentication middleware should come before Authorization
 app.UseAuthorization();   // Only need to call this once after UseAuthentication
 app.MapControllers();
