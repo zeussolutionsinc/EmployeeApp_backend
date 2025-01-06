@@ -64,19 +64,23 @@ namespace EmployeePortal.Controllers
             }
         }
 
-
         [HttpGet("authid/{authId}")]
         public async Task<IActionResult> GetForm(string authId)
         {
             try
             {
-                // Define the authorized admin's authId here (hardcoded or from a secure source)
-                const string authorizedAdminAuthId = "674f9c45948b864a9a0abdc3 "; // Replace this with the actual authId
+                // Define the authorized admin's authIds here (hardcoded or from a secure source)
+                var authorizedAdminAuthIds = new List<string> { "674f9c45948b864a9a0abdc3", "674a7b4df099fd1441a0645e" };
 
-                // Check if the provided authId exists and matches the authorized admin's authId
+                // Check if the provided authId is one of the authorized admin's authIds
+                if (!authorizedAdminAuthIds.Contains(authId))
+                {
+                    return NotFound("Access denied or employee with the specified authId not found.");
+                }
+
+                // Verify the authId exists in the EmployeeLogins
                 var isAuthorizedAdmin = await _context.EmployeeLogins
-                    .AnyAsync(el => el.AuthId == authId && el.AuthId == authorizedAdminAuthId);
-
+                                                      .AnyAsync(el => el.AuthId == authId);
                 if (!isAuthorizedAdmin)
                 {
                     return NotFound("Access denied or employee with the specified authId not found.");
@@ -84,13 +88,14 @@ namespace EmployeePortal.Controllers
 
                 // Query the database for all H1b entries that are "Pending"
                 var entries = await _context.H1bentries
-                    .ToListAsync();
+                                            .ToListAsync();
 
                 // If no entries exist, inform the client
                 if (!entries.Any())
                 {
                     return NotFound("No pending H1b entries found.");
                 }
+
                 var result = entries.Select(entry => MapToDTO(entry)).ToList();
 
                 // Return the mapped results
@@ -102,6 +107,9 @@ namespace EmployeePortal.Controllers
                 return StatusCode(500, "Internal server error");
             }
         }
+
+
+
 
 
 
