@@ -69,19 +69,11 @@ namespace EmployeePortal.Controllers
         {
             try
             {
-                // Define the authorized admin's authIds here (hardcoded or from a secure source)
-                var authorizedAdminAuthIds = new List<string> { "674f9c45948b864a9a0abdc3", "66afbe9ff30baa7121fa018e" };
+                // Retrieve the employee login details for the given authId
+                var employeeLogin = await _context.EmployeeLogins.FirstOrDefaultAsync(entry => entry.AuthId == authId);
 
-                // Check if the provided authId is one of the authorized admin's authIds
-                if (!authorizedAdminAuthIds.Contains(authId))
-                {
-                    return NotFound("Access denied or employee with the specified authId not found.");
-                }
-
-                // Verify the authId exists in the EmployeeLogins
-                var isAuthorizedAdmin = await _context.EmployeeLogins
-                                                      .AnyAsync(el => el.AuthId == authId);
-                if (!isAuthorizedAdmin)
+                // Check if employeeLogin is found and if the EmployeeId is part of the Superadmins
+                if (employeeLogin == null || !await _context.Superadmins.AnyAsync(sa => sa.EmployeeId == employeeLogin.EmployeeId))
                 {
                     return NotFound("Access denied or employee with the specified authId not found.");
                 }
