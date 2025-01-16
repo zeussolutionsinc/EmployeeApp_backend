@@ -25,11 +25,14 @@ namespace EmployeePortal.Controllers
         }
 
 
-        [HttpGet("passport/{passportNumber}/firstName/{legalFirstName}")]
-        public async Task<IActionResult> GetForm(string passportNumber, string legalFirstName)
+
+
+
+        [HttpGet("passport/{passportNumber}")]
+        public async Task<IActionResult> GetH1bForm(string passportNumber)
         {
             var result = await _context.H1bentries
-                .FirstOrDefaultAsync(entry => entry.PassportNumber == passportNumber && entry.LegalFirstName == legalFirstName);
+                .FirstOrDefaultAsync(entry => entry.PassportNumber == passportNumber);
             if (result == null)
             {
                 return NoContent();
@@ -118,7 +121,25 @@ namespace EmployeePortal.Controllers
         }
 
 
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<dynamic>>> GetNames()
+        {
+            var entries = await _context.H1bentries
+                .Select(entry => new
+                {
+                    PassportNumber = entry.PassportNumber,
+                    LegalFirstName = entry.LegalFirstName,
+                    LegalLastName = entry.LegalLastName
+                })
+                .ToListAsync();
 
+            if (entries == null || !entries.Any())
+            {
+                return NotFound("No entries found.");
+            }
+
+            return Ok(entries);
+        }
 
 
 
