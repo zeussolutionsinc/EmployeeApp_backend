@@ -84,8 +84,45 @@ namespace EmployeePortal.Controllers
             }
         }
 
+        //[HttpGet("authid/{authId}")]
+        //public async Task<IActionResult> GetForm(string authId)
+        //{
+        //    try
+        //    {
+        //        // Retrieve the employee login details for the given authId
+        //        var employeeLogin = await _context.EmployeeLogins.FirstOrDefaultAsync(entry => entry.AuthId == authId);
+
+        //        // Check if employeeLogin is found and if the EmployeeId is part of the Superadmins
+        //        if (employeeLogin == null || !await _context.Superadmins.AnyAsync(sa => sa.EmployeeId == employeeLogin.EmployeeId))
+        //        {
+        //            return NotFound("Access denied or employee with the specified authId not found.");
+        //        }
+
+        //        // Query the database for all H1b entries that are "Pending"
+        //        var entries = await _context.H1bentries
+        //                                    .ToListAsync();
+
+        //        // If no entries exist, inform the client
+        //        if (!entries.Any())
+        //        {
+        //            return NotFound("No pending H1b entries found.");
+        //        }
+
+        //        var result = entries.Select(entry => MapToDTO(entry)).ToList();
+
+        //        // Return the mapped results
+        //        return Ok(result);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "An error occurred while fetching the H1b entries");
+        //        return StatusCode(500, "Internal server error");
+        //    }
+        //}
+
+
         [HttpGet("authid/{authId}")]
-        public async Task<IActionResult> GetForm(string authId)
+        public async Task<ActionResult<IEnumerable<dynamic>>> GetNamesandPassport(string authId)
         {
             try
             {
@@ -98,47 +135,27 @@ namespace EmployeePortal.Controllers
                     return NotFound("Access denied or employee with the specified authId not found.");
                 }
 
-                // Query the database for all H1b entries that are "Pending"
                 var entries = await _context.H1bentries
-                                            .ToListAsync();
+                    .Select(entry => new
+                    {
+                        PassportNumber = entry.PassportNumber,
+                        LegalFirstName = entry.LegalFirstName,
+                        LegalLastName = entry.LegalLastName
+                    })
+                    .ToListAsync();
 
-                // If no entries exist, inform the client
-                if (!entries.Any())
+                if (entries == null || !entries.Any())
                 {
-                    return NotFound("No pending H1b entries found.");
+                    return NotFound("No entries found.");
                 }
 
-                var result = entries.Select(entry => MapToDTO(entry)).ToList();
-
-                // Return the mapped results
-                return Ok(result);
+                return Ok(entries);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An error occurred while fetching the H1b entries");
-                return StatusCode(500, "Internal server error");
+                // Log the exception details here using your logging framework
+                return StatusCode(500, "An error occurred while processing your request.");
             }
-        }
-
-
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<dynamic>>> GetNames()
-        {
-            var entries = await _context.H1bentries
-                .Select(entry => new
-                {
-                    PassportNumber = entry.PassportNumber,
-                    LegalFirstName = entry.LegalFirstName,
-                    LegalLastName = entry.LegalLastName
-                })
-                .ToListAsync();
-
-            if (entries == null || !entries.Any())
-            {
-                return NotFound("No entries found.");
-            }
-
-            return Ok(entries);
         }
 
 
