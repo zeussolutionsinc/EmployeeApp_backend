@@ -24,6 +24,23 @@ namespace EmployeePortal.Controllers
             _configuration = configuration;
         }
 
+
+        [HttpGet("passport/{passportNumber}/firstName/{legalFirstName}")]
+        public async Task<IActionResult> GetForm(string passportNumber, string legalFirstName)
+        {
+            var result = await _context.H1bentries
+                .FirstOrDefaultAsync(entry => entry.PassportNumber == passportNumber && entry.LegalFirstName == legalFirstName);
+            if (result == null)
+            {
+                return NoContent();
+            }
+            var dto = MapToDTO(result);
+
+            return Ok(dto);
+        }
+
+
+
         [HttpGet("resume/{blobName}")]
         public async Task<IActionResult> GetResume(string blobName)
         {

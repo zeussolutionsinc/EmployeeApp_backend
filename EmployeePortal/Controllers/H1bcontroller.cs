@@ -19,6 +19,8 @@ namespace EmployeePortal.Controllers
             _logger = logger; // Initialize the logger correctly
         }
 
+
+
         [HttpGet("authid/{authid}")]
         public async Task<IActionResult> GetForm(string authid)
         {
